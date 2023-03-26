@@ -335,7 +335,22 @@ pub fn install_version(
 
 pub fn install_nightly(config_data: &mut JuliaupConfig, paths: &GlobalPaths) -> Result<()> {
     let nightly_base_url = get_julia_nightly_server_base_url()?;
+
+    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     let download_url_path = "bin/macos/x86_64/julia-latest-macos-x86_64.tar.gz";
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    let download_url_path = "bin/macos/aarch64/julia-latest-macos-aarch64.tar.gz";
+    #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+    let download_url_path = "bin/winnt/x64/julia-latest-win64.tar.gz";
+    #[cfg(all(target_os = "windows", target_arch = "x86"))]
+    let download_url_path = "bin/winnt/x86/julia-latest-win32.tar.gz";
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    let download_url_path = "bin/linux/x86_64/julia-latest-linux-x86_64.tar.gz";
+    #[cfg(all(target_os = "linux", target_arch = "x86"))]
+    let download_url_path = "bin/linux/i686/julia-latest-linux-i686.tar.gz";
+    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+    let download_url_path = "bin/linux/aarch64/julia-latest-linux-aarch64.tar.gz";
+
     let download_url = nightly_base_url
     .join(download_url_path)
     .with_context(|| {
