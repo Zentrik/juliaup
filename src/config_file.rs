@@ -105,7 +105,7 @@ pub struct JuliaupConfig {
 }
 
 #[cfg(feature = "selfupdate")]
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JuliaupSelfConfig {
     #[serde(
         rename = "BackgroundSelfUpdateInterval",
