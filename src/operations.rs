@@ -9,6 +9,7 @@ use crate::get_juliaup_target;
 use crate::global_paths::GlobalPaths;
 use crate::jsonstructs_versionsdb::JuliaupVersionDB;
 use crate::utils::get_bin_dir;
+use crate::utils::get_julia_nightly_server_base_url;
 use crate::utils::get_juliaserver_base_url;
 use anyhow::{anyhow, bail, Context, Result};
 use bstr::ByteSlice;
@@ -332,6 +333,43 @@ pub fn install_version(
     Ok(())
 }
 
+pub fn install_nightly(config_data: &mut JuliaupConfig, paths: &GlobalPaths) -> Result<()> {
+    let nightly_base_url = get_julia_nightly_server_base_url()?;
+    let download_url_path = "bin/macos/x86_64/julia-latest-macos-x86_64.tar.gz";
+    let download_url = nightly_base_url
+    .join(download_url_path)
+    .with_context(|| {
+        format!(
+            "Failed to construct a valid url from '{}' and '{}'.",
+            nightly_base_url, download_url_path
+        )
+    })?;
+
+    eprintln!(
+        "{} Julia {}",
+        style("Installing").green().bold(),
+        "nightly",
+    );
+
+    let child_target_foldername = config_data.settings.nightly_name.clone();
+    let target_path = paths.juliauphome.join(&child_target_foldername);
+    std::fs::create_dir_all(target_path.parent().unwrap())?;
+
+    download_extract_sans_parent(download_url.as_ref(), &target_path, 1)?;
+
+    let mut rel_path = PathBuf::new();
+    rel_path.push(".");
+    rel_path.push(&child_target_foldername);
+
+    config_data.installed_versions.insert(
+        "nightly".to_string(),
+        JuliaupConfigVersion {
+            path: rel_path.to_string_lossy().into_owned(),
+        },
+    );
+    Ok(())
+}
+
 pub fn garbage_collect_versions(
     config_data: &mut JuliaupConfig,
     paths: &GlobalPaths,
@@ -344,6 +382,7 @@ pub fn garbage_collect_versions(
                 command: _,
                 args: _,
             } => true,
+            JuliaupConfigChannel::NightlyChannel { last_update: _ } => true,
         }) {
             let path_to_delete = paths.juliauphome.join(&detail.path);
             let display = path_to_delete.display();
@@ -412,6 +451,26 @@ pub fn create_symlink(
                 style("Creating symlink").cyan().bold(),
                 symlink_name,
                 version
+            );
+
+            std::os::unix::fs::symlink(target_path.join("bin").join("julia"), &symlink_path)
+                .with_context(|| {
+                    format!(
+                        "failed to create symlink `{}`.",
+                        symlink_path.to_string_lossy()
+                    )
+                })?;
+        }
+        JuliaupConfigChannel::NightlyChannel { last_update: _ } => {
+            let child_target_fullname = "julia-nightly";
+
+            let target_path = paths.juliauphome.join(&child_target_fullname);
+
+            eprintln!(
+                "{} {} for Julia {}.",
+                style("Creating symlink").cyan().bold(),
+                symlink_name,
+                "nightly"
             );
 
             std::os::unix::fs::symlink(target_path.join("bin").join("julia"), &symlink_path)

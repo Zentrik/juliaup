@@ -18,7 +18,7 @@ pub fn run_command_list(paths: &GlobalPaths) -> Result<()> {
     let versiondb_data =
         load_versions_db(paths).with_context(|| "`list` command failed to load versions db.")?;
 
-    let rows_in_table: Vec<_> = versiondb_data
+    let mut rows_in_table: Vec<_> = versiondb_data
         .available_channels
         .iter()
         .map(|i| -> ChannelRow {
@@ -29,7 +29,10 @@ pub fn run_command_list(paths: &GlobalPaths) -> Result<()> {
         })
         .sorted_by_key(|i| i.name.clone())
         .collect();
-
+    rows_in_table.push(ChannelRow {
+        name: "nightly".to_string(),
+        version: "latest".to_string(),
+    });
     print_stdout(
         rows_in_table
             .with_title()

@@ -31,6 +31,7 @@ pub fn run_command_status(paths: &GlobalPaths) -> Result<()> {
     let versiondb_data =
         load_versions_db(paths).with_context(|| "`status` command failed to load versions db.")?;
 
+    log::debug!("config_file: {:?}", config_file);
     let rows_in_table: Vec<_> = config_file
         .data
         .installed_channels
@@ -51,6 +52,9 @@ pub fn run_command_status(paths: &GlobalPaths) -> Result<()> {
                 name: i.0.to_string(),
                 version: match i.1 {
                     JuliaupConfigChannel::SystemChannel { version } => version.clone(),
+                    JuliaupConfigChannel::NightlyChannel { last_update } => {
+                        format!("nightly ({})", last_update)
+                    }
                     JuliaupConfigChannel::LinkedChannel { command, args } => {
                         let mut combined_command = String::new();
 
@@ -93,6 +97,9 @@ pub fn run_command_status(paths: &GlobalPaths) -> Result<()> {
                     JuliaupConfigChannel::LinkedChannel {
                         command: _,
                         args: _,
+                    } => "".to_string(),
+                    JuliaupConfigChannel::NightlyChannel {
+                        last_update: _
                     } => "".to_string(),
                 },
             }

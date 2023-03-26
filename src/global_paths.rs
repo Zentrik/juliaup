@@ -3,6 +3,8 @@ use crate::get_juliaup_target;
 use anyhow::Context;
 use anyhow::{anyhow, bail, Result};
 use std::path::PathBuf;
+
+#[derive(Debug)]
 pub struct GlobalPaths {
     pub juliauphome: PathBuf,
     pub juliaupconfig: PathBuf,

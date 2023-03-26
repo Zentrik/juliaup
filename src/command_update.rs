@@ -4,10 +4,11 @@ use crate::global_paths::GlobalPaths;
 use crate::jsonstructs_versionsdb::JuliaupVersionDB;
 #[cfg(not(windows))]
 use crate::operations::create_symlink;
-use crate::operations::garbage_collect_versions;
+use crate::operations::{garbage_collect_versions, install_nightly};
 use crate::operations::{install_version, update_version_db};
 use crate::versions_file::load_versions_db;
 use anyhow::{anyhow, bail, Context, Result};
+use chrono::Utc;
 
 fn update_channel(
     config_db: &mut JuliaupConfig,
@@ -70,6 +71,26 @@ fn update_channel(
                     channel
                 );
             } else {
+            }
+        }
+        JuliaupConfigChannel::NightlyChannel { last_update: _ } => {
+            install_nightly(config_db, paths).with_context(|| {
+                format!("Failed to install 'nightly' while updating channel '{channel}'.")
+            })?;
+
+            let config_channel = JuliaupConfigChannel::NightlyChannel { last_update: Utc::now() };
+            config_db.installed_channels.insert(
+                channel.clone(),
+                config_channel.clone(),
+            );
+
+            #[cfg(not(windows))]
+            if config_db.settings.create_channel_symlinks {
+                create_symlink(
+                    &config_channel,
+                    &config_db.settings.nightly_name,
+                    paths,
+                )?;
             }
         }
     }

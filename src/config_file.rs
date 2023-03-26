@@ -20,13 +20,13 @@ fn is_default_versionsdb_update_interval(i: &i64) -> bool {
     *i == default_versionsdb_update_interval()
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JuliaupConfigVersion {
     #[serde(rename = "Path")]
     pub path: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum JuliaupConfigChannel {
     SystemChannel {
@@ -39,9 +39,13 @@ pub enum JuliaupConfigChannel {
         #[serde(rename = "Args")]
         args: Option<Vec<String>>,
     },
+    NightlyChannel {
+        #[serde(rename = "LastUpdate")]
+        last_update: DateTime<Utc>,
+    },
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JuliaupConfigSettings {
     #[serde(
         rename = "CreateChannelSymlinks",
@@ -55,6 +59,12 @@ pub struct JuliaupConfigSettings {
         skip_serializing_if = "is_default_versionsdb_update_interval"
     )]
     pub versionsdb_update_interval: i64,
+    #[serde(
+        rename = "NightlyName",
+        default,
+        skip_serializing_if = "is_default",
+    )]
+    pub nightly_name: String,
 }
 
 impl Default for JuliaupConfigSettings {
@@ -62,6 +72,7 @@ impl Default for JuliaupConfigSettings {
         JuliaupConfigSettings {
             create_channel_symlinks: false,
             versionsdb_update_interval: default_versionsdb_update_interval(),
+            nightly_name: "julia-nightly".into(),
         }
     }
 }
@@ -74,7 +85,7 @@ pub struct JuliaupOverride {
     pub channel: String
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JuliaupConfig {
     #[serde(rename = "Default")]
     pub default: Option<String>,
@@ -114,6 +125,7 @@ pub struct JuliaupSelfConfig {
     pub last_selfupdate: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug)]
 pub struct JuliaupConfigFile {
     pub file: File,
     pub lock: FlockLock<File>,
@@ -124,6 +136,7 @@ pub struct JuliaupConfigFile {
     pub self_data: JuliaupSelfConfig,
 }
 
+#[derive(Debug)]
 pub struct JuliaupReadonlyConfigFile {
     pub data: JuliaupConfig,
     #[cfg(feature = "selfupdate")]
@@ -178,6 +191,7 @@ pub fn load_config_db(paths: &GlobalPaths) -> Result<JuliaupReadonlyConfigFile> 
                 settings: JuliaupConfigSettings {
                     create_channel_symlinks: false,
                     versionsdb_update_interval: default_versionsdb_update_interval(),
+                    nightly_name: "julia-nightly".into(),
                 },
                 last_version_db_update: None,
             },
@@ -274,6 +288,7 @@ pub fn load_mut_config_db(paths: &GlobalPaths) -> Result<JuliaupConfigFile> {
                 settings: JuliaupConfigSettings {
                     create_channel_symlinks: false,
                     versionsdb_update_interval: default_versionsdb_update_interval(),
+                    nightly_name: "julia-nightly".into(),
                 },
                 last_version_db_update: None,
             };

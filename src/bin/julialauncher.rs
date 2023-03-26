@@ -200,6 +200,21 @@ fn get_julia_path_from_channel(
                 })?;
             return Ok((absolute_path.into_path_buf(), Vec::new()));
         }
+        JuliaupConfigChannel::NightlyChannel { last_update: _ } => {
+            let absolute_path = juliaupconfig_path.parent()
+                .unwrap()
+                .join(config_data.settings.nightly_name.clone())
+                .join("bin")
+                .join(format!("julia{}", std::env::consts::EXE_SUFFIX))
+                .normalize()
+                .with_context(|| {
+                    format!(
+                        "Failed to normalize path for Julia binary, starting from `{}`.",
+                        juliaupconfig_path.display()
+                    )
+                })?;
+            return Ok((absolute_path.into_path_buf(), Vec::new()));
+        }
     }
 }
 
