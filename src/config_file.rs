@@ -77,7 +77,7 @@ impl Default for JuliaupConfigSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JuliaupOverride {
     #[serde(rename = "Path")]
     pub path: String,
